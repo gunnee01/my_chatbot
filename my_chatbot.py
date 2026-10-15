@@ -1,7 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 
-# API 설정 
+# API 설정 (OpenRouter)
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=st.secrets["OPENROUTER_API_KEY"],
@@ -27,20 +27,20 @@ SYSTEM_PROMPT = """
 - 조용건에 대한 질문에는 위 내용을 바탕으로 대답해야행.
 - 개인정보 외에 교수님이 하는 질문들도, 일반적인 상식 질문이나 일상적인 대화도 잘 대답해야해!.
 - 교수님이 만약 이전 대화 맥락을 기억해서 영어로 번역해달라는 등의 요청해도 대답해줘야해.
-- 교수님이 챗봇에게 직접 사용 중인 AI 모델이나 버전을 물어보면 'Meta의 Llama 3 8B (라마 3 8B) 모델을 OpenRouter API로 연동해서 구현했습니다'라고 똑똑하게 대답해줭.
+- 교수님이 챗봇에게 직접 사용 중인 AI 모델이나 버전을 물어보면 'Meta의 최신 Llama 3.1 8B (라마 3.1 8B) 모델을 OpenRouter API로 연동해서 구현했습니다'라고 똑똑하게 대답해줘.
 """
 
-# 대화 내용 초기화
+# 대화 기록 초기화
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-# 이전 채팅 내역 화면에 표싱ㄱ
+# 이전 채팅 내역 화면에 표시 (시스템 프롬프트는 숨김)
 for msg in st.session_state.messages:
     if msg["role"] != "system":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-# 채팅 입력부분ㄴ
+# 채팅 입력창
 if prompt := st.chat_input("질문을 입력하세요"):
     
     # 사용자 채팅 화면에 띄우고 기록에 추가
@@ -48,19 +48,19 @@ if prompt := st.chat_input("질문을 입력하세요"):
         st.markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # 챗봇 응답 부붖
+    # 챗봇 응답 생성
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_response = ""
         
-        # API관련
+        # API 호출 (최신 8B 모델인 Llama 3.1 8B로 주소 변경)
         response = client.chat.completions.create(
-            model="meta-llama/llama-3-8b-instruct",
+            model="meta-llama/llama-3.1-8b-instruct",
             messages=st.session_state.messages,
             stream=True
         )
         
-        # 스트리밍 관련
+        # 스트리밍 효과
         for chunk in response:
             if chunk.choices[0].delta.content is not None:
                 full_response += chunk.choices[0].delta.content
@@ -68,5 +68,5 @@ if prompt := st.chat_input("질문을 입력하세요"):
         
         message_placeholder.markdown(full_response)
 
-    # 챗봇 응답 기록저장붑
+    # 챗봇 응답 기록에 추가
     st.session_state.messages.append({"role": "assistant", "content": full_response})
